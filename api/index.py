@@ -7,24 +7,20 @@
 !pip install -q -U langchain-chroma
 !pip install -q -U sentence-transformers
 
-from google import genai
-from pydantic import BaseModel
-from typing import List
-from langchain_core.tools import tool
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
-from langchain_google_genai import ChatGoogleGenerativeAI
 import os
 import requests
-from amadeus import Client, ResponseError
-from langchain.agents import create_agent
-from langchain_community.utilities import SerpAPIWrapper
+from fastapi import FastAPI
+from pydantic import BaseModel
+from google import genai
+from amadeus import Client
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_core.tools import tool
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_chroma import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_core.documents import Document
-from langchain_community.embeddings import SentenceTransformerEmbeddings
-from langchain_core.prompts import MessagesPlaceholder
+from langchain_community.utilities import SerpAPIWrapper
 
 app = FastAPI()
 
@@ -71,7 +67,7 @@ private_guide_content = [
     Document(page_content="M-PESA DISCOUNT: Paying via M-Pesa at Fort Jesus gives you a free guided tour.")
 ]
 
-embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
 vectorstore = Chroma.from_documents(
     documents=private_guide_content, 
@@ -163,4 +159,5 @@ async def chat(request: ChatRequest):
     ans = response["output"]
     chat_history.append(HumanMessage(content=request.message))
     chat_history.append(AIMessage(content=ans))
+
     return {"reply": ans}
