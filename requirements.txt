@@ -1,11 +1,11 @@
 fastapi
 langchain
 langchain-google-genai
-langchain-community
-langchain-chroma
+langchain-classic
 pydantic
 requests
-google-search-results
+google-genai
+
 
 
 
