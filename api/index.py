@@ -58,20 +58,7 @@ def verify_travel_feasibility(plan_details: str) -> str:
     return response.text
 
 # ── RAG Knowledge Base ───────────────────────────────────────
-# ✅ FIX 3: Using InMemoryVectorStore instead of Chroma
-#    No chromadb dependency, works fine on Vercel serverless
-class GeminiEmbeddings(Embeddings):
-    def embed_documents(self, texts):
-        result = client.models.embed_content(
-            model="text-embedding-004",
-            contents=texts
-        )
-        return [e.values for e in result.embeddings]
-
-    def embed_query(self, text):
-        return self.embed_documents([text])[0]
-
-embeddings = GeminiEmbeddings()
+embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 
 private_guide_content = [
     Document(page_content="SECRET DEAL: Use code 'JAMBO2026' for 20% off at any Diani beach resort."),
@@ -159,6 +146,7 @@ async def chat(request: ChatRequest):
     ans = response["output"]
 
     return {"reply": ans}
+
 
 
 
