@@ -9,6 +9,7 @@ from langchain_core.tools import tool
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.embeddings import Embeddings
 
 # ✅ FIX 3: Replaced langchain-chroma (needs chromadb, blocked by Vercel)
 #    with InMemoryVectorStore from langchain_core — no extra dependencies
@@ -55,10 +56,18 @@ def verify_travel_feasibility(plan_details: str) -> str:
 # ── RAG Knowledge Base ───────────────────────────────────────
 # ✅ FIX 3: Using InMemoryVectorStore instead of Chroma
 #    No chromadb dependency, works fine on Vercel serverless
-embeddings = GoogleGenerativeAIEmbeddings(
-    model="models/text-embedding-004",
-    google_api_key=GOOGLE_API_KEY
-)
+class GeminiEmbeddings(Embeddings):
+    def embed_documents(self, texts):
+        result = client.models.embed_content(
+            model="text-embedding-004",
+            contents=texts
+        )
+        return [e.values for e in result.embeddings]
+
+    def embed_query(self, text):
+        return self.embed_documents([text])[0]
+
+embeddings = GeminiEmbeddings()
 
 private_guide_content = [
     Document(page_content="SECRET DEAL: Use code 'JAMBO2026' for 20% off at any Diani beach resort."),
@@ -146,4 +155,5 @@ async def chat(request: ChatRequest):
     ans = response["output"]
 
     return {"reply": ans}
+
 
