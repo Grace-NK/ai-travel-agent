@@ -69,10 +69,11 @@ private_guide_content = [
 
 embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
+# This keeps the database in the RAM so Vercel doesn't crash trying to write to disk
 vectorstore = Chroma.from_documents(
     documents=private_guide_content, 
     embedding=embeddings,
-    persist_directory="./chroma_db"
+    persist_directory=None  
 )
 
 @tool
@@ -161,3 +162,4 @@ async def chat(request: ChatRequest):
     chat_history.append(AIMessage(content=ans))
 
     return {"reply": ans}
+
