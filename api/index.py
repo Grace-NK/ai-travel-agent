@@ -10,6 +10,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.embeddings import Embeddings
+from google.genai import types
 
 # ✅ FIX 3: Replaced langchain-chroma (needs chromadb, blocked by Vercel)
 #    with InMemoryVectorStore from langchain_core — no extra dependencies
@@ -24,7 +25,10 @@ SERPAPI_API_KEY          = os.getenv("SERPAPI_API_KEY")
 OPENWEATHERMAP_API_KEY   = os.getenv("OPENWEATHERMAP_API_KEY")
 
 llm    = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=GOOGLE_API_KEY)
-client = genai.Client(api_key=GOOGLE_API_KEY)
+client = genai.Client(
+    api_key=GOOGLE_API_KEY,
+    http_options=types.HttpOptions(api_version="v1")  # ✅ force v1
+)
 
 # ── Feasibility Tool ─────────────────────────────────────────
 class TravelPlan(BaseModel):
@@ -155,5 +159,6 @@ async def chat(request: ChatRequest):
     ans = response["output"]
 
     return {"reply": ans}
+
 
 
