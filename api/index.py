@@ -30,7 +30,7 @@ AMADEUS_API_SECRET = os.getenv("AMADEUS_API_SECRET")
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 OPENWEATHERMAP_API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
 
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=GOOGLE_API_KEY)
+llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=GOOGLE_API_KEY)
 client = genai.Client(api_key=GOOGLE_API_KEY)
 
 # Feasible logic
@@ -162,4 +162,5 @@ async def chat(request: ChatRequest):
     chat_history.append(AIMessage(content=ans))
 
     return {"reply": ans}
+
 
