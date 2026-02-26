@@ -3,7 +3,6 @@ import requests
 from fastapi import FastAPI
 from pydantic import BaseModel
 from google import genai
-from amadeus import Client
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_core.tools import tool
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -93,17 +92,42 @@ def search_web(query: str) -> str:
 @tool
 def flight_search(origin: str, destination: str, date: str) -> str:
     """Finds flights (Dates: YYYY-MM-DD, Codes: NBO, MBA)."""
-    amadeus = Client(client_id=os.environ["AMADEUS_API_KEY"], 
-                     client_secret=os.environ["AMADEUS_API_SECRET"])
-    try:
-        resp = amadeus.shopping.flight_offers_search.get(
-            originLocationCode=origin, destinationLocationCode=destination, 
-            departureDate=date, adults=1, max=1)
-        price = resp.data[0]['price']['total']
-        curr = resp.data[0]['price']['currency']
-        return f"Found a flight for {price} {curr}."
-    except Exception as e:
-        return f"No flights found. ({e})"
+    
+    api_key = os.getenv("AMADEUS_API_KEY")
+    api_secret = os.getenv("AMADEUS_API_SECRET")
+
+    token_resp = requests.post(
+        "https://test.api.amadeus.com/v1/security/oauth2/token",
+        data={
+            "grant_type": "client_credentials",
+            "client_id": api_key,
+            "client_secret": api_secret,
+        },
+    )
+
+    access_token = token_resp.json()["access_token"]
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    resp = requests.get(
+        "https://test.api.amadeus.com/v2/shopping/flight-offers",
+        headers=headers,
+        params={
+            "originLocationCode": origin,
+            "destinationLocationCode": destination,
+            "departureDate": date,
+            "adults": 1,
+            "max": 1
+        },
+    )
+
+    data = resp.json()
+
+    if "data" not in data:
+        return "No flights found."
+
+    price = data["data"][0]["price"]["total"]
+    return f"Found a flight for {price}."
 
 def build_travel_agent(model, tools_list):
     """
@@ -153,6 +177,7 @@ async def chat(request: ChatRequest):
     chat_history.append(AIMessage(content=ans))
 
     return {"reply": ans}
+
 
 
 
