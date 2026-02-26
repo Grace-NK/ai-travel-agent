@@ -1,12 +1,3 @@
-!pip install -U google-genai
-!pip install -q -U langchain-google-genai langchain
-!pip install langchain-classic
-!pip install -q -U langchain-community
-!pip install amadeus
-!pip install -q -U google-search-results
-!pip install -q -U langchain-chroma
-!pip install -q -U sentence-transformers
-
 import os
 import requests
 from fastapi import FastAPI
@@ -153,7 +144,7 @@ class ChatRequest(BaseModel):
 
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
-    response = agent_executor.invoke({
+    response = agent.invoke({
         "input": request.message,
         "chat_history": chat_history
     })
@@ -162,5 +153,6 @@ async def chat(request: ChatRequest):
     chat_history.append(AIMessage(content=ans))
 
     return {"reply": ans}
+
 
 
