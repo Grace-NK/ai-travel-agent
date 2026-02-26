@@ -56,7 +56,7 @@ def verify_travel_feasibility(plan_details: str) -> str:
 # ✅ FIX 3: Using InMemoryVectorStore instead of Chroma
 #    No chromadb dependency, works fine on Vercel serverless
 embeddings = GoogleGenerativeAIEmbeddings(
-    model="models/embedding-001",
+    model="models/text-embedding-004",
     google_api_key=GOOGLE_API_KEY
 )
 
@@ -146,3 +146,4 @@ async def chat(request: ChatRequest):
     ans = response["output"]
 
     return {"reply": ans}
+
