@@ -6,6 +6,7 @@ langchain-chroma
 pydantic
 requests
 google-search-results
-amadeus==9.0.0
+
+
 
 
