@@ -3,8 +3,7 @@ langchain
 langchain-google-genai
 langchain-community
 langchain-chroma
-sentence-transformers
-amadeus
-google-search-results
 pydantic
 requests
+amadeus
+google-search-results
