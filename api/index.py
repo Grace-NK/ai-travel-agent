@@ -10,7 +10,7 @@ from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
-from langchain_community.utilities import SerpAPIWrapper
+
 
 app = FastAPI()
 
@@ -83,9 +83,26 @@ def get_weather(city: str) -> str:
 
 @tool
 def search_web(query: str) -> str:
-    """Searches Google for local info and events."""
-    search = SerpAPIWrapper()
-    return search.run(query)
+    """Simple web search using SerpAPI REST."""
+    
+    api_key = os.getenv("SERPAPI_API_KEY")
+    
+    if not api_key:
+        return "Search API key missing."
+
+    url = "https://serpapi.com/search.json"
+
+    params = {
+        "q": query,
+        "api_key": api_key
+    }
+
+    resp = requests.get(url, params=params).json()
+
+    if "organic_results" not in resp:
+        return "No search results."
+
+    return resp["organic_results"][0]["snippet"]
 
 
 def build_travel_agent(model, tools_list):
@@ -136,6 +153,7 @@ async def chat(request: ChatRequest):
     chat_history.append(AIMessage(content=ans))
 
     return {"reply": ans}
+
 
 
 
