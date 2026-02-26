@@ -5,7 +5,6 @@ from pydantic import BaseModel
 from google import genai
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_core.tools import tool
-from amadeus import Client, ResponseError
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.messages import HumanMessage, AIMessage
@@ -16,8 +15,6 @@ from langchain_community.utilities import SerpAPIWrapper
 app = FastAPI()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-AMADEUS_API_KEY = os.getenv("AMADEUS_API_KEY")
-AMADEUS_API_SECRET = os.getenv("AMADEUS_API_SECRET")
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 OPENWEATHERMAP_API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
 
@@ -90,20 +87,6 @@ def search_web(query: str) -> str:
     search = SerpAPIWrapper()
     return search.run(query)
 
-@tool
-def flight_search(origin: str, destination: str, date: str) -> str:
-    """Finds flights (Dates: YYYY-MM-DD, Codes: NBO, MBA)."""
-    amadeus = Client(client_id=os.environ["AMADEUS_API_KEY"], 
-                     client_secret=os.environ["AMADEUS_API_SECRET"])
-    try:
-        resp = amadeus.shopping.flight_offers_search.get(
-            originLocationCode=origin, destinationLocationCode=destination, 
-            departureDate=date, adults=1, max=1)
-        price = resp.data[0]['price']['total']
-        curr = resp.data[0]['price']['currency']
-        return f"Found a flight for {price} {curr}."
-    except Exception as e:
-        return f"No flights found. ({e})"
 
 def build_travel_agent(model, tools_list):
     """
@@ -119,7 +102,7 @@ def build_travel_agent(model, tools_list):
     agent_logic = create_tool_calling_agent(model, tools_list, prompt)
     return AgentExecutor(agent=agent_logic, tools=tools_list, verbose=True)
     
-tools = [get_weather, search_web, flight_search, check_private_travel_guide, verify_travel_feasibility]
+tools = [get_weather, search_web, check_private_travel_guide, verify_travel_feasibility]
 
 agent = build_travel_agent(model=llm, tools_list=tools)
 
@@ -153,6 +136,7 @@ async def chat(request: ChatRequest):
     chat_history.append(AIMessage(content=ans))
 
     return {"reply": ans}
+
 
 
 
