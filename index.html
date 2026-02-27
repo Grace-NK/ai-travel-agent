@@ -3,41 +3,417 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Travel Agent</title>
+    <title>Magical Kenya AI Travel Agent</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
-        #chat-box { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
-        .user { color: blue; margin-bottom: 5px; }
-        .bot { color: green; margin-bottom: 15px; font-weight: bold; }
-        input { width: 80%; padding: 10px; }
-        button { padding: 10px; cursor: pointer; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --red:    #C8102E;
+            --green:  #006600;
+            --gold:   #C89B3C;
+            --cream:  #FAF7F2;
+            --dark:   #1A1A1A;
+            --mid:    #555;
+            --border: #E8E0D0;
+            --user-bg: #1A1A1A;
+            --bot-bg:  #FFFFFF;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Subtle background texture */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(ellipse at 20% 20%, rgba(200,16,46,0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(0,102,0,0.04) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 620px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        /* Header */
+        .header {
+            padding: 28px 32px 24px;
+            background: var(--dark);
+            border-radius: 16px 16px 0 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--red), var(--gold), var(--green));
+        }
+
+        .flag-stripe {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .stripe {
+            height: 3px;
+            border-radius: 2px;
+            flex: 1;
+        }
+        .stripe.r { background: var(--red); }
+        .stripe.g { background: var(--green); }
+        .stripe.b { background: #000; }
+        .stripe.w { background: #fff; opacity: 0.6; }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+        }
+
+        .header p {
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.5);
+            font-weight: 300;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 7px; height: 7px;
+            background: #4CAF50;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Chat box */
+        #chat-box {
+            background: #fff;
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            height: 380px;
+            overflow-y: auto;
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+
+        #chat-box::-webkit-scrollbar { width: 4px; }
+        #chat-box::-webkit-scrollbar-track { background: transparent; }
+        #chat-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        /* Empty state */
+        .empty-state {
+            margin: auto;
+            text-align: center;
+            color: #bbb;
+        }
+
+        .empty-state .icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .empty-state p {
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        /* Messages */
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 82%;
+            animation: fadeUp 0.25s ease;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user { align-self: flex-end; align-items: flex-end; }
+        .message.bot  { align-self: flex-start; align-items: flex-start; }
+
+        .bubble {
+            padding: 11px 16px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        .message.user .bubble {
+            background: var(--dark);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .bubble {
+            background: var(--cream);
+            color: var(--dark);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #aaa;
+            margin-bottom: 4px;
+        }
+
+        /* Typing indicator */
+        .typing .bubble {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            padding: 14px 18px;
+        }
+
+        .dot {
+            width: 6px; height: 6px;
+            background: #aaa;
+            border-radius: 50%;
+            animation: bounce 1.2s infinite;
+        }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+
+        /* Input area */
+        .input-area {
+            display: flex;
+            gap: 0;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 16px 16px;
+            overflow: hidden;
+        }
+
+        #user-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 16px 20px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            color: var(--dark);
+            background: transparent;
+        }
+
+        #user-input::placeholder { color: #bbb; }
+
+        #send-btn {
+            background: var(--dark);
+            color: #fff;
+            border: none;
+            padding: 0 24px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            letter-spacing: 0.03em;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        #send-btn:hover { background: var(--red); }
+        #send-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* Suggestions */
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .suggestion {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 0.78rem;
+            color: var(--mid);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .suggestion:hover {
+            border-color: var(--gold);
+            color: var(--dark);
+            background: #fffdf7;
+        }
     </style>
 </head>
 <body>
-    <h2>Magical Kenya AI Travel Agent</h2>
-    <div id="chat-box"></div>
-    <input type="text" id="user-input" placeholder="Ask about Mombasa...">
-    <button onclick="sendMessage()">Send</button>
+    <div class="container">
+        <div class="header">
+            <div class="flag-stripe">
+                <div class="stripe b"></div>
+                <div class="stripe r"></div>
+                <div class="stripe g"></div>
+                <div class="stripe w"></div>
+                <div class="stripe b"></div>
+            </div>
+            <h1>Magical Kenya Travel Agent</h1>
+            <p><span class="status-dot"></span>AI-powered · Always available</p>
+        </div>
+
+        <div id="chat-box">
+            <div class="empty-state">
+                <span class="icon">🌍</span>
+                <p>Ask me anything about travel in Kenya.<br>Weather, tips, hidden deals.</p>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Ask about Mombasa, Nairobi, Diani...">
+            <button id="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+
+        <div class="suggestions">
+            <span class="suggestion" onclick="fillInput(this)">🌤 Weather in Mombasa</span>
+            <span class="suggestion" onclick="fillInput(this)">🏖 Best time for Diani</span>
+            <span class="suggestion" onclick="fillInput(this)">🦁 Safari tips</span>
+        </div>
+    </div>
 
     <script>
+        const chatHistory = [];
+
+        function fillInput(el) {
+            const text = el.textContent.replace(/^[^\w]+/, '').trim();
+            document.getElementById('user-input').value = text;
+            document.getElementById('user-input').focus();
+        }
+
+        function addMessage(role, text) {
+            const box = document.getElementById('chat-box');
+
+            // Remove empty state on first message
+            const empty = box.querySelector('.empty-state');
+            if (empty) empty.remove();
+
+            const wrap = document.createElement('div');
+            wrap.className = `message ${role}`;
+
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.textContent = role === 'user' ? 'You' : 'Agent';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.textContent = text;
+
+            wrap.appendChild(label);
+            wrap.appendChild(bubble);
+            box.appendChild(wrap);
+            box.scrollTop = box.scrollHeight;
+            return wrap;
+        }
+
+        function showTyping() {
+            const box = document.getElementById('chat-box');
+            const wrap = document.createElement('div');
+            wrap.className = 'message bot typing';
+            wrap.id = 'typing-indicator';
+
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.textContent = 'Agent';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+
+            wrap.appendChild(label);
+            wrap.appendChild(bubble);
+            box.appendChild(wrap);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function removeTyping() {
+            const el = document.getElementById('typing-indicator');
+            if (el) el.remove();
+        }
+
         async function sendMessage() {
             const input = document.getElementById('user-input');
-            const chatBox = document.getElementById('chat-box');
-            if (!input.value) return;
+            const btn   = document.getElementById('send-btn');
+            const text  = input.value.trim();
+            if (!text) return;
 
-            chatBox.innerHTML += `<div class="user">You: ${input.value}</div>`;
-            
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: input.value })
-            });
-            
-            const data = await response.json();
-            chatBox.innerHTML += `<div class="bot">Agent: ${data.reply}</div>`;
             input.value = '';
-            chatBox.scrollTop = chatBox.scrollHeight;
+            btn.disabled = true;
+            addMessage('user', text);
+            showTyping();
+
+            chatHistory.push({ role: 'human', content: text });
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text, history: chatHistory.slice(0, -1) })
+                });
+                const data = await response.json();
+                removeTyping();
+                addMessage('bot', data.reply);
+                chatHistory.push({ role: 'ai', content: data.reply });
+            } catch (err) {
+                removeTyping();
+                addMessage('bot', 'Sorry, something went wrong. Please try again.');
+            }
+
+            btn.disabled = false;
+            input.focus();
         }
+
+        document.getElementById('user-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') sendMessage();
+        });
     </script>
 </body>
 </html>
