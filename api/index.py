@@ -4,16 +4,13 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
 from google import genai
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.tools import tool
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.messages import HumanMessage, AIMessage
-from langchain_core.embeddings import Embeddings
 from google.genai import types
 from fastapi.responses import HTMLResponse
-from langchain_core.vectorstores import InMemoryVectorStore
-from langchain_core.documents import Document
 
 app = FastAPI()
 
@@ -24,9 +21,8 @@ OPENWEATHERMAP_API_KEY   = os.getenv("OPENWEATHERMAP_API_KEY")
 llm    = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=GOOGLE_API_KEY)
 client = genai.Client(
     api_key=GOOGLE_API_KEY,
-    http_options=types.HttpOptions(api_version="v1")  
+    http_options=types.HttpOptions(api_version="v1")
 )
-
 
 class TravelPlan(BaseModel):
     destination: str
@@ -54,26 +50,20 @@ def verify_travel_feasibility(plan_details: str) -> str:
     )
     return response.text
 
-
-embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
-
 private_guide_content = [
-    Document(page_content="SECRET DEAL: Use code 'JAMBO2026' for 20% off at any Diani beach resort."),
-    Document(page_content="FAMILY TIP: The Nairobi National Park has a hidden 'Junior Ranger' program for kids aged 5-10."),
-    Document(page_content="M-PESA DISCOUNT: Paying via M-Pesa at Fort Jesus gives you a free guided tour.")
+    "SECRET DEAL: Use code 'JAMBO2026' for 20% off at any Diani beach resort.",
+    "FAMILY TIP: The Nairobi National Park has a hidden 'Junior Ranger' program for kids aged 5-10.",
+    "M-PESA DISCOUNT: Paying via M-Pesa at Fort Jesus gives you a free guided tour."
 ]
-
-vectorstore = InMemoryVectorStore.from_documents(
-    documents=private_guide_content,
-    embedding=embeddings
-)
 
 @tool
 def check_private_travel_guide(query: str) -> str:
     """Consult the internal Magical Kenya private guide for secret discounts and family programs."""
-    docs = vectorstore.similarity_search(query, k=1)
-    return docs[0].page_content
-
+    query_lower = query.lower()
+    for doc in private_guide_content:
+        if any(word in doc.lower() for word in query_lower.split()):
+            return doc
+    return private_guide_content[0]  # fallback
 
 @tool
 def get_weather(city: str) -> str:
@@ -99,7 +89,6 @@ def search_web(query: str) -> str:
         return "No search results found."
     return resp["organic_results"][0]["snippet"]
 
-
 def build_travel_agent(model, tools_list):
     prompt = ChatPromptTemplate.from_messages([
         ("system", "You are a professional Kenya Travel Agent. Always use tools to verify weather or flights."),
@@ -114,16 +103,15 @@ tools = [get_weather, search_web, check_private_travel_guide, verify_travel_feas
 agent = build_travel_agent(model=llm, tools_list=tools)
 
 class ChatMessage(BaseModel):
-    role: str      # "human" or "ai"
+    role: str
     content: str
 
 class ChatRequest(BaseModel):
     message: str
-    history: List[ChatMessage] = []   # client sends previous turns
+    history: List[ChatMessage] = []
 
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
-    # Reconstruct history from the request
     chat_history = []
     for msg in request.history:
         if msg.role == "human":
@@ -142,15 +130,8 @@ async def chat(request: ChatRequest):
 @app.get("/", response_class=HTMLResponse)
 async def read_index():
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(os.path.dirname(current_dir), "index.html")  # go up one level
+    path = os.path.join(os.path.dirname(current_dir), "index.html")
     if not os.path.exists(path):
         return HTMLResponse(content="<h1>index.html not found</h1>", status_code=404)
     with open(path, "r") as f:
         return f.read()
-
-
-
-
-
-
-
