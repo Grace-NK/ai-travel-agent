@@ -123,7 +123,6 @@ class ChatRequest(BaseModel):
 
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
-    # Reconstruct history from the request
     chat_history = []
     for msg in request.history:
         if msg.role == "human":
@@ -135,7 +134,14 @@ async def chat(request: ChatRequest):
         "input": request.message,
         "chat_history": chat_history
     })
+    
+    
     ans = response["output"]
+    if isinstance(ans, list):
+        ans = " ".join(
+            item["text"] for item in ans
+            if isinstance(item, dict) and item.get("type") == "text"
+        )
 
     return {"reply": ans}
 
@@ -148,6 +154,7 @@ async def read_index():
         return HTMLResponse(content="<h1>index.html not found</h1>", status_code=404)
     with open(path, "r") as f:
         return f.read()
+
 
 
 
