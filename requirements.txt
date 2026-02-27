@@ -5,6 +5,8 @@ langchain-classic
 pydantic
 requests
 google-genai
+uvicorn
+
 
 
 
