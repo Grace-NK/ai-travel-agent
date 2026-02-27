@@ -6,6 +6,7 @@ pydantic
 requests
 google-genai
 uvicorn
+numpy
 
 
 
