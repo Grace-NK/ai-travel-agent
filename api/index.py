@@ -137,12 +137,21 @@ async def chat(request: ChatRequest):
     
     
     ans = response["output"]
+    
+    
     if isinstance(ans, list):
-        ans = " ".join(
-            item["text"] for item in ans
-            if isinstance(item, dict) and item.get("type") == "text"
-        )
+        parts = []
+        for item in ans:
+            if isinstance(item, dict):
+                
+                text_val = item.get("text")
+                if text_val:
+                    parts.append(text_val)
+            elif isinstance(item, str):
+                parts.append(item)
+        ans = "".join(parts)
 
+    
     return {"reply": ans}
 
 
@@ -154,6 +163,7 @@ async def read_index():
         return HTMLResponse(content="<h1>index.html not found</h1>", status_code=404)
     with open(path, "r") as f:
         return f.read()
+
 
 
 
