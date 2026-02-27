@@ -11,11 +11,9 @@ from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.embeddings import Embeddings
 from google.genai import types
-
-# ✅ FIX 3: Replaced langchain-chroma (needs chromadb, blocked by Vercel)
-#    with InMemoryVectorStore from langchain_core — no extra dependencies
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from langchain_core.vectorstores import InMemoryVectorStore
-
 from langchain_core.documents import Document
 
 app = FastAPI()
@@ -27,10 +25,10 @@ OPENWEATHERMAP_API_KEY   = os.getenv("OPENWEATHERMAP_API_KEY")
 llm    = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=GOOGLE_API_KEY)
 client = genai.Client(
     api_key=GOOGLE_API_KEY,
-    http_options=types.HttpOptions(api_version="v1")  # ✅ force v1
+    http_options=types.HttpOptions(api_version="v1")  
 )
 
-# ── Feasibility Tool ─────────────────────────────────────────
+
 class TravelPlan(BaseModel):
     destination: str
     is_feasible: bool
@@ -116,10 +114,6 @@ def build_travel_agent(model, tools_list):
 tools = [get_weather, search_web, check_private_travel_guide, verify_travel_feasibility]
 agent = build_travel_agent(model=llm, tools_list=tools)
 
-# ── API Schema ───────────────────────────────────────────────
-# ✅ FIX 4: chat_history moved into the request body.
-#    Global state doesn't persist on Vercel serverless — each request
-#    is stateless. The client is responsible for sending history each time.
 class ChatMessage(BaseModel):
     role: str      # "human" or "ai"
     content: str
@@ -128,7 +122,6 @@ class ChatRequest(BaseModel):
     message: str
     history: List[ChatMessage] = []   # client sends previous turns
 
-# ── Endpoint ─────────────────────────────────────────────────
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
     # Reconstruct history from the request
@@ -146,6 +139,13 @@ async def chat(request: ChatRequest):
     ans = response["output"]
 
     return {"reply": ans}
+
+@app.get("/", response_class=HTMLResponse)
+async def read_index():
+    
+    with open("index.html", "r") as f:
+        return f.read()
+
 
 
 
