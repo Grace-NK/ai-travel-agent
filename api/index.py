@@ -12,7 +12,6 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.embeddings import Embeddings
 from google.genai import types
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_core.documents import Document
 
@@ -55,7 +54,7 @@ def verify_travel_feasibility(plan_details: str) -> str:
     )
     return response.text
 
-# ── RAG Knowledge Base ───────────────────────────────────────
+
 embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 
 private_guide_content = [
@@ -75,7 +74,7 @@ def check_private_travel_guide(query: str) -> str:
     docs = vectorstore.similarity_search(query, k=1)
     return docs[0].page_content
 
-# ── Other Tools ──────────────────────────────────────────────
+
 @tool
 def get_weather(city: str) -> str:
     """Gets current weather for a city."""
@@ -100,7 +99,7 @@ def search_web(query: str) -> str:
         return "No search results found."
     return resp["organic_results"][0]["snippet"]
 
-# ── Agent Builder ────────────────────────────────────────────
+
 def build_travel_agent(model, tools_list):
     prompt = ChatPromptTemplate.from_messages([
         ("system", "You are a professional Kenya Travel Agent. Always use tools to verify weather or flights."),
@@ -142,21 +141,13 @@ async def chat(request: ChatRequest):
 
 @app.get("/", response_class=HTMLResponse)
 async def read_index():
-    
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    
-    paths_to_try = [
-        os.path.join(current_dir, "index.html"),
-        os.path.join(os.path.dirname(current_dir), "index.html")
-    ]
-    
-    for path in paths_to_try:
-        if os.path.exists(path):
-            with open(path, "r") as f:
-                return f.read()
-                
-    return HTMLResponse(content="<h1>index.html not found</h1>", status_code=404)
+    # Vercel places files relative to the project root
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    path = os.path.join(base_dir, "index.html")
+    if not os.path.exists(path):
+        return HTMLResponse(content="<h1>index.html not found</h1>", status_code=404)
+    with open(path, "r") as f:
+        return f.read()
 
 
 
