@@ -141,13 +141,13 @@ async def chat(request: ChatRequest):
 
 @app.get("/", response_class=HTMLResponse)
 async def read_index():
-    # Vercel places files relative to the project root
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    path = os.path.join(base_dir, "index.html")
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(os.path.dirname(current_dir), "index.html")  # go up one level
     if not os.path.exists(path):
         return HTMLResponse(content="<h1>index.html not found</h1>", status_code=404)
     with open(path, "r") as f:
         return f.read()
+
 
 
 
