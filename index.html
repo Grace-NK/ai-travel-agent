@@ -345,7 +345,7 @@
 
             const bubble = document.createElement('div');
             bubble.className = 'bubble';
-            bubble.textContent = text;
+            bubble.textContent = typeof text === 'string' ? text : JSON.stringify(text);
 
             wrap.appendChild(label);
             wrap.appendChild(bubble);
@@ -417,3 +417,4 @@
     </script>
 </body>
 </html>
+
