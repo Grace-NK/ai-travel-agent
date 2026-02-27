@@ -143,8 +143,21 @@ async def chat(request: ChatRequest):
 @app.get("/", response_class=HTMLResponse)
 async def read_index():
     
-    with open("index.html", "r") as f:
-        return f.read()
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    
+    paths_to_try = [
+        os.path.join(current_dir, "index.html"),
+        os.path.join(os.path.dirname(current_dir), "index.html")
+    ]
+    
+    for path in paths_to_try:
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                return f.read()
+                
+    return HTMLResponse(content="<h1>index.html not found</h1>", status_code=404)
+
 
 
 
