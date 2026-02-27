@@ -135,9 +135,16 @@ async def chat(request: ChatRequest):
         "input": request.message,
         "chat_history": chat_history
     })
-    ans = response["output"]
+    ans = response.get("output", "")
 
-    return {"reply": ans}
+        
+        if isinstance(ans, list):
+            ans = " ".join(
+                item["text"] if isinstance(item, dict) and "text" in item else str(item)
+                for item in ans
+            )
+        
+        return {"reply": ans}
 
 @app.get("/", response_class=HTMLResponse)
 async def read_index():
@@ -147,6 +154,7 @@ async def read_index():
         return HTMLResponse(content="<h1>index.html not found</h1>", status_code=404)
     with open(path, "r") as f:
         return f.read()
+
 
 
 
