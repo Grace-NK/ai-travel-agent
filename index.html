@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Travel Agent</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        #chat-box { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        .user { color: blue; margin-bottom: 5px; }
+        .bot { color: green; margin-bottom: 15px; font-weight: bold; }
+        input { width: 80%; padding: 10px; }
+        button { padding: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Magical Kenya AI Travel Agent</h2>
+    <div id="chat-box"></div>
+    <input type="text" id="user-input" placeholder="Ask about Mombasa...">
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const chatBox = document.getElementById('chat-box');
+            if (!input.value) return;
+
+            chatBox.innerHTML += `<div class="user">You: ${input.value}</div>`;
+            
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: input.value })
+            });
+            
+            const data = await response.json();
+            chatBox.innerHTML += `<div class="bot">Agent: ${data.reply}</div>`;
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
